@@ -8,6 +8,7 @@ import {
   Keyboard,
   Pressable,
   StatusBar,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { firebase } from "../config";
@@ -20,7 +21,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
-import Checkbox from "expo-checkbox";
 
 import SQLite from "react-native-sqlite-storage";
 
@@ -35,32 +35,18 @@ const db = SQLite.openDatabase(
 
 const Home = () => {
   const [todos, setTodos] = useState([]);
-  const todoRef = firebase.firestore().collection("todos");
-  const [addData, setAddData] = useState("");
-  const navigation = useNavigation();
-
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [addData, setAddData] = useState("");
+  const [loading, isLoading] = useState(false);
+
+  const todoRef = firebase.firestore().collection("todos");
+  const navigation = useNavigation();
 
   // fetch/read todo from firebase database
   useEffect(() => {
+    isLoading(true);
     getData();
-
-    todoRef.orderBy("createdAt", "desc").onSnapshot((querySnapshot) => {
-      const todos = [];
-      querySnapshot.forEach((doc) => {
-        const { heading } = doc.data();
-        const { completed } = doc.data();
-        const { color } = doc.data();
-        todos.push({
-          id: doc.id,
-          heading,
-          completed,
-          color,
-        });
-      });
-      setTodos(todos);
-    });
+    isLoading(false);
   }, []);
 
   // delete/remove todo from firebase database
@@ -77,30 +63,36 @@ const Home = () => {
       });
   };
 
+  //sqlite
   // add/save a todo item
-  const addTodo = () => {
+  const addTodo = async () => {
     // validate todo (if we have todo / todo is not empty)
     if (addData && addData.length > 0) {
       // get the timestamp of todo creation
 
-      const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-      const data = {
-        heading: addData,
-        createdAt: timestamp,
-        completed: false,
-        color: generateColor(),
-      };
+      isLoading(true);
+      const createdAt = new Date().toDateString();
+      const color = generateColor();
+      const heading = addData;
+      const completed = false;
 
-      todoRef
-        .add(data)
-        .then(() => {
-          setAddData("");
-          // hide keyboard after adding
-          Keyboard.dismiss();
-        })
-        .catch((error) => {
-          alert(error);
-        });
+      await db.transaction(async (tx) => {
+        await tx.executeSql(
+          "INSERT INTO Todos (color, heading, createdAt, completed) VALUES (?,?,?,?)",
+          [color, heading, createdAt, completed],
+          (tx, res) => {
+            console.log(res);
+
+            setAddData("");
+            getData();
+            // hide keyboard after adding
+            Keyboard.dismiss();
+          },
+          (tx, err) => {
+            console.log(err);
+          }
+        );
+      });
     }
   };
 
@@ -141,7 +133,23 @@ const Home = () => {
             }
           }
         );
+
+        tx.executeSql(
+          "SELECT * FROM Todos ORDER BY tid DESC",
+          [],
+          async (tx, results) => {
+            var len = results.rows.length;
+            console.log(len);
+            var temp = [];
+            for (let i = 0; i < results.rows.length; ++i)
+              temp.push(results.rows.item(i));
+
+            await setTodos(temp);
+          }
+        );
       });
+
+      isLoading(false);
     } catch (error) {
       console.log("FETCH ERROR => ", error);
     }
@@ -248,10 +256,11 @@ const Home = () => {
           </TouchableOpacity>
         </View>
 
+        {loading && <ActivityIndicator style={tw`mt-4`} color={"#3890C7"} />}
         <FlatList
           style={tw`mt-4`}
           data={todos}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.tid}
           numColumns={1}
           renderItem={({ item }) => (
             <View>
@@ -279,7 +288,7 @@ const Home = () => {
                   }`}
                   onPress={() => handleChecked(item)}
                 >
-                  {item.completed === true && (
+                  {item.completed === 1 && (
                     <MaterialCommunityIcons
                       style={[tw`text-base`, { elevation: 2 }]}
                       name="check-bold"

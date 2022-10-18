@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { firebase } from "../config";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
@@ -18,7 +17,6 @@ import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 // import * as SQLite from "react-native-sqlite-storage";
 
 import SQLite from "react-native-sqlite-storage";
-import transaction from "react-native-sqlite-storage";
 
 // Defining Database in const
 const db = SQLite.openDatabase(
@@ -35,9 +33,6 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const [uname, setUname] = useState("");
-  const [pass, setPass] = useState("");
-
   useEffect(() => {
     createTable();
     getData();
@@ -49,6 +44,10 @@ const Login = () => {
     db.transaction((tx) => {
       tx.executeSql(
         "CREATE TABLE IF NOT EXISTS Users (uid INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT, Password TEXT);"
+      );
+
+      tx.executeSql(
+        "CREATE TABLE IF NOT EXISTS Todos (tid INTEGER PRIMARY KEY AUTOINCREMENT, color TEXT, heading TEXT, createdAt TEXT, completed NUMERIC);"
       );
     });
   };
