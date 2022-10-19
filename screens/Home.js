@@ -17,7 +17,7 @@ import {
   FontAwesome5,
   SimpleLineIcons,
 } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
@@ -30,13 +30,16 @@ const Home = () => {
   const [loading, isLoading] = useState(false);
 
   const navigation = useNavigation();
+  const isFocused = useIsFocused();
 
   // fetch/read todo from firebase database
   useEffect(() => {
-    isLoading(true);
-    getData();
-    isLoading(false);
-  }, []);
+    if (isFocused) {
+      isLoading(true);
+      getData();
+      isLoading(false);
+    }
+  }, [isFocused]);
 
   // delete/remove todo from firebase database
   const deleteTodo = async (item) => {
@@ -65,7 +68,7 @@ const Home = () => {
       const createdAt = new Date().toDateString();
       const color = generateColor();
       const heading = addData;
-      const completed = false;
+      const completed = 0;
 
       await db.transaction(async (tx) => {
         await tx.executeSql(

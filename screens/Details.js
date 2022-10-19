@@ -23,11 +23,12 @@ const Details = ({ route }) => {
 
   const updateTodo = async () => {
     if (textHeading && textHeading.length > 0) {
+      console.log(textHeading, route.params.item.tid);
       try {
         await db.transaction(async (tx) => {
           await tx.executeSql(
             "UPDATE Todos SET heading=? WHERE tid=?",
-            [item.heading, item.tid],
+            [textHeading, route.params.item.tid],
             (res) => {
               navigation.navigate("Home");
             }
