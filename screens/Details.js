@@ -7,33 +7,35 @@ import {
   View,
 } from "react-native";
 import React, { useState } from "react";
-import { firebase } from "../config";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
+import db from "../sqliteConfig";
+
 const Details = ({ route }) => {
-  const todoRef = firebase.firestore().collection("todos");
   const [textHeading, onChangeHeadingText] = useState(
     route.params.item.heading
   );
   const navigation = useNavigation();
 
-  const updateTodo = () => {
+  const updateTodo = async () => {
     if (textHeading && textHeading.length > 0) {
-      todoRef
-        .doc(route.params.item.id)
-        .update({
-          heading: textHeading,
-        })
-        .then(() => {
-          navigation.navigate("Home");
-        })
-        .catch((error) => {
-          alert(error.message);
+      try {
+        await db.transaction(async (tx) => {
+          await tx.executeSql(
+            "UPDATE Todos SET heading=? WHERE tid=?",
+            [item.heading, item.tid],
+            (res) => {
+              navigation.navigate("Home");
+            }
+          );
         });
+      } catch (error) {
+        console.log("ERROR! COMPLETED UPDATE => ", error);
+      }
     }
   };
 

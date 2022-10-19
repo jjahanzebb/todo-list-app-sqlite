@@ -14,18 +14,7 @@ import tw from "twrnc";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-// import * as SQLite from "react-native-sqlite-storage";
-
-import SQLite from "react-native-sqlite-storage";
-
-// Defining Database in const
-const db = SQLite.openDatabase(
-  { name: "db.TodoDB", location: "default" },
-  () => {},
-  (error) => {
-    console.log("DB ERROR => ", error);
-  }
-);
+import db from "../sqliteConfig";
 
 const Login = () => {
   const navigation = useNavigation();

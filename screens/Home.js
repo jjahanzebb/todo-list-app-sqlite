@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { firebase } from "../config";
 import {
   Entypo,
   MaterialCommunityIcons,
@@ -22,24 +21,14 @@ import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
 
-import SQLite from "react-native-sqlite-storage";
-
-// Defining Database in const
-const db = SQLite.openDatabase(
-  { name: "db.TodoDB", location: "default" },
-  () => {},
-  (error) => {
-    console.log("DB ERROR => ", error);
-  }
-);
+import db from "../sqliteConfig";
 
 const Home = () => {
   const [todos, setTodos] = useState([]);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("-");
   const [addData, setAddData] = useState("");
   const [loading, isLoading] = useState(false);
 
-  const todoRef = firebase.firestore().collection("todos");
   const navigation = useNavigation();
 
   // fetch/read todo from firebase database
@@ -50,20 +39,22 @@ const Home = () => {
   }, []);
 
   // delete/remove todo from firebase database
-  const deleteTodo = (item) => {
-    todoRef
-      .doc(item.id)
-      .delete()
-      .then(() => {
-        // if deleted
-        alert("Todo Deleted Successfully!");
-      })
-      .catch((error) => {
-        alert(error);
+  const deleteTodo = async (item) => {
+    try {
+      await db.transaction(async (tx) => {
+        await tx.executeSql(
+          "DELETE FROM Todos WHERE tid=?",
+          [item.tid],
+          (res) => {
+            getData();
+          }
+        );
       });
+    } catch (error) {
+      console.log("ERROR! DELETE TODO => ", error);
+    }
   };
 
-  //sqlite
   // add/save a todo item
   const addTodo = async () => {
     // validate todo (if we have todo / todo is not empty)
@@ -97,18 +88,23 @@ const Home = () => {
   };
 
   // updates to-do if it is completed or not in database
-  const handleChecked = (item) => {
-    todoRef
-      .doc(item.id)
-      .update({
-        completed: !item.completed,
-      })
-      .then(() => {
-        console.log("Status Updated!");
-      })
-      .catch((error) => {
-        alert(error.message);
+  const handleChecked = async (item) => {
+    try {
+      if (item.completed === 1) item.completed = 0;
+      else item.completed = 1;
+
+      await db.transaction(async (tx) => {
+        await tx.executeSql(
+          "UPDATE Todos SET completed=? WHERE tid=?",
+          [item.completed, item.tid],
+          (res) => {
+            getData();
+          }
+        );
       });
+    } catch (error) {
+      console.log("ERROR! COMPLETED UPDATE => ", error);
+    }
   };
 
   // generates random color to store with to-do
@@ -120,21 +116,17 @@ const Home = () => {
   };
 
   // Fetch data from Database
-  const getData = () => {
+  const getData = async () => {
     try {
-      db.transaction((tx) => {
-        tx.executeSql(
-          "SELECT Username, Password FROM Users",
-          [],
-          (tx, results) => {
-            var len = results.rows.length;
-            if (len > 0) {
-              setUsername(results.rows.item(0).Username);
-            }
+      await db.transaction(async (tx) => {
+        await tx.executeSql("SELECT Username FROM Users", [], (tx, results) => {
+          var len = results.rows.length;
+          if (len > 0) {
+            setUsername(results.rows.item(0).Username);
           }
-        );
+        });
 
-        tx.executeSql(
+        await tx.executeSql(
           "SELECT * FROM Todos ORDER BY tid DESC",
           [],
           async (tx, results) => {
@@ -211,17 +203,20 @@ const Home = () => {
             </Text>
           </View>
         </View>
+
         <View>
           <Text
             style={[tw`text-base font-semibold pl-6`, { color: "#F1FCFE" }]}
           >
             Welcome,
-            {"\n" + username}
+            {"\n" + username[0].toUpperCase() + username.slice(1)}
           </Text>
         </View>
 
         {/* formContainer */}
-        <View style={[tw`flex-row h-12 mx-4 mt-14`, { elevation: 10 }]}>
+        <View
+          style={[tw`flex-row h-12 mx-4 mt-14 rounded-xl`, { elevation: 10 }]}
+        >
           {/* input */}
           <TextInput
             style={[
@@ -258,16 +253,16 @@ const Home = () => {
 
         {loading && <ActivityIndicator style={tw`mt-4`} color={"#3890C7"} />}
         <FlatList
-          style={tw`mt-4`}
+          style={tw`pt-4 rounded-xl mx-4`}
           data={todos}
           keyExtractor={(item) => item.tid}
           numColumns={1}
           renderItem={({ item }) => (
-            <View>
+            <View style={tw`rounded-xl mt-2 `}>
               {/* container */}
               <TouchableOpacity
                 style={[
-                  tw`h-12 pr-4 mt-2 mx-4 flex-row items-center rounded-xl `,
+                  tw`h-12 pr-4  flex-row items-center rounded-xl `,
                   { backgroundColor: "#1D3557", elevation: 5 },
                 ]}
                 onPress={() => navigation.navigate("Details", { item })}
@@ -284,7 +279,7 @@ const Home = () => {
 
                 <TouchableOpacity
                   style={tw`ml-2 rounded-full w-8 h-8 border-2 border-white items-center justify-center  ${
-                    item.completed && "bg-emerald-500"
+                    item.completed === 1 && "bg-emerald-500"
                   }`}
                   onPress={() => handleChecked(item)}
                 >
@@ -304,7 +299,7 @@ const Home = () => {
                     style={[
                       { color: "#F1FCFE" },
                       tw`text-base font-bold mr-5 ${
-                        item.completed &&
+                        item.completed === 1 &&
                         "line-through text-slate-400 font-semibold"
                       }`,
                     ]}
