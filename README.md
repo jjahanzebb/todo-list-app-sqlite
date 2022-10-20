@@ -17,7 +17,9 @@
 <img src="https://user-images.githubusercontent.com/93594492/196633057-bde0e403-f68d-4be5-95ab-17c129755ac2.png" width="40%"/>
 
 ### ⚫ Home Screen
-<img src="https://user-images.githubusercontent.com/93594492/196633070-f7035337-c9a9-405a-8be4-a3198cfdcce7.png" width="40%"/>
+<img src="https://user-images.githubusercontent.com/93594492/196857749-2cfa6b92-a293-4205-9894-4ddc5ba26c19.png" width="40%"/>
 
 ### ⚫ Details Screen
 <img src="https://user-images.githubusercontent.com/93594492/196633112-d4f00b38-d685-4362-8e8b-0af417ea0633.png" width="40%"/>
+
+
