@@ -73,8 +73,8 @@ const Home = ({ route }) => {
 
       await db.transaction(async (tx) => {
         await tx.executeSql(
-          "INSERT INTO Todos (color, heading, createdAt, completed) VALUES (?,?,?,?)",
-          [color, heading, createdAt, completed],
+          "INSERT INTO Todos (color, heading, createdAt, completed, uid) VALUES (?,?,?,?,?)",
+          [color, heading, createdAt, completed, uid],
           (tx, res) => {
             console.log(res);
 
@@ -135,8 +135,8 @@ const Home = ({ route }) => {
         );
 
         await tx.executeSql(
-          "SELECT * FROM Todos ORDER BY tid DESC",
-          [],
+          "SELECT * FROM Todos WHERE uid=? ORDER BY tid DESC",
+          [uid],
           async (tx, results) => {
             var len = results.rows.length;
             console.log(len);
@@ -212,13 +212,30 @@ const Home = ({ route }) => {
           </View>
         </View>
 
-        <View>
-          <Text
-            style={[tw`text-base font-semibold pl-6`, { color: "#F1FCFE" }]}
-          >
-            Welcome,
-            {"\n" + username[0].toUpperCase() + username.slice(1)}
-          </Text>
+        <View style={tw` justify-between mx-6 mt-2 `}>
+          {/* Welcome text */}
+          <View>
+            <Text
+              style={[
+                tw`text-sm font-bold text-right -mb-1`,
+                { color: "#3890C7" },
+              ]}
+            >
+              Welcome,
+            </Text>
+            <Text
+              style={[tw`text-xl font-bold text-right`, { color: "#1D3557" }]}
+            >
+              {username[0].toUpperCase() + username.slice(1)}
+            </Text>
+
+            {/* Date */}
+            <Text
+              style={[tw`text-sm font-bold text-right`, { color: "#888899" }]}
+            >
+              {"It's " + new Date().toDateString()}
+            </Text>
+          </View>
         </View>
 
         {/* formContainer */}
