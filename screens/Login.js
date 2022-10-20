@@ -36,7 +36,7 @@ const Login = () => {
       );
 
       tx.executeSql(
-        "CREATE TABLE IF NOT EXISTS Todos (tid INTEGER PRIMARY KEY AUTOINCREMENT, color TEXT, heading TEXT, createdAt TEXT, completed NUMERIC);"
+        "CREATE TABLE IF NOT EXISTS Todos (tid INTEGER PRIMARY KEY AUTOINCREMENT, color TEXT, heading TEXT, createdAt TEXT, completed NUMERIC, uid INTEGER);"
       );
     });
   };
@@ -146,7 +146,7 @@ const Login = () => {
 
             <Text
               style={[
-                tw`text-4xl font-800 rounded-lg px-2 py-0.5`,
+                tw`text-4xl font-800 rounded-lg px-2 py-1`,
                 {
                   color: "#F1FCFE",
                   backgroundColor: "#3890C7",

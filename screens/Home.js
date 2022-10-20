@@ -28,7 +28,7 @@ const Home = ({ route }) => {
   const [username, setUsername] = useState(route.params.username);
   const [uid, setUid] = useState(0);
   const [addData, setAddData] = useState("");
-  const [loading, isLoading] = useState(false);
+  const [loading, isLoading] = useState(true);
 
   const navigation = useNavigation();
   const isFocused = useIsFocused();
@@ -36,11 +36,9 @@ const Home = ({ route }) => {
   // fetch/read todo from firebase database
   useEffect(() => {
     if (isFocused) {
-      isLoading(true);
       getData();
-      isLoading(false);
     }
-  }, [isFocused]);
+  }, [uid, isFocused]);
 
   // delete/remove todo from firebase database
   const deleteTodo = async (item) => {
@@ -119,23 +117,27 @@ const Home = ({ route }) => {
     return `#${randomColor}`;
   };
 
-  // Fetch data from Database
+  // Fetch todos data from Database
   const getData = async () => {
     try {
       await db.transaction(async (tx) => {
+        let userid = 0;
         await tx.executeSql(
           "SELECT uid FROM Users WHERE Username=? AND Password=?",
           [route.params.username, route.params.password],
           (tx, results) => {
             var len = results.rows.length;
             if (len > 0) {
+              console.log("userid => " + results.rows.item(0).uid);
+
               setUid(results.rows.item(0).uid);
             }
           }
         );
 
+        console.log(userid, uid);
         await tx.executeSql(
-          "SELECT * FROM Todos WHERE uid=? ORDER BY tid DESC",
+          "SELECT * FROM Todos WHERE uid=? OR uid=? ORDER BY tid DESC",
           [uid],
           async (tx, results) => {
             var len = results.rows.length;
@@ -145,14 +147,19 @@ const Home = ({ route }) => {
               temp.push(results.rows.item(i));
 
             await setTodos(temp);
+            await isLoading(false);
           }
         );
       });
-
-      isLoading(false);
     } catch (error) {
       console.log("FETCH ERROR => ", error);
     }
+  };
+
+  // logout
+  const logout = () => {
+    setTodos([]);
+    navigation.navigate("Login");
   };
 
   return (
@@ -169,7 +176,7 @@ const Home = ({ route }) => {
             {/* back button */}
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("Login");
+                logout();
               }}
               activeOpacity={0.5}
             >
