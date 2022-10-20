@@ -47,20 +47,56 @@ const Login = () => {
       Alert.alert("Wrong Credentials!", "Please enter Username and Password");
     } else {
       try {
-        await db.transaction(async (tx) => {
-          await tx.executeSql(
-            "INSERT INTO Users (Username, Password) VALUES (?,?)",
-            [username, password],
-            (tx, res) => {
-              console.log(res);
-            },
-            (tx, err) => {
-              console.log(err);
+        db.transaction((tx) => {
+          tx.executeSql(
+            "SELECT Username, Password FROM Users",
+            [],
+            (tx, results) => {
+              console.log("setData 1 ==>", results);
+              var temp = 0;
+              for (let i = 0; i < results.rows.length; ++i) {
+                if (
+                  username === results.rows.item(i).Username &&
+                  password === results.rows.item(i).Password
+                )
+                  temp++;
+              }
+
+              if (temp > 0) {
+                navigation.navigate("Home", { username, password });
+              } else {
+                var temp = 0;
+                for (let i = 0; i < results.rows.length; ++i) {
+                  if (
+                    username === results.rows.item(i).Username &&
+                    password != results.rows.item(i).Password
+                  )
+                    temp++;
+                }
+
+                if (temp > 0) {
+                  Alert.alert(
+                    "Username already exists!",
+                    "Please enter correct password"
+                  );
+                } else {
+                  tx.executeSql(
+                    "INSERT INTO Users (Username, Password) VALUES (?,?)",
+                    [username, password],
+                    (tx, res) => {
+                      console.log(res);
+                    },
+                    (tx, err) => {
+                      console.log(err);
+                    }
+                  );
+
+                  navigation.navigate("Home", { username, password });
+                }
+              }
             }
           );
-          console.log("ssssssssssssssssssssssss");
         });
-        navigation.navigate("Home");
       } catch (error) {
         console.log(error);
       }
@@ -72,12 +108,14 @@ const Login = () => {
     try {
       db.transaction((tx) => {
         tx.executeSql(
-          "SELECT Username, Password FROM Users",
-          [],
+          "SELECT Username, Password FROM Users WHERE Username=? AND Password=?",
+          [username, password],
           (tx, results) => {
+            console.log("getData 1 ==>", results);
+
             var len = results.rows.length;
             if (len > 0) {
-              navigation.navigate("Home");
+              navigation.navigate("Home", { username, password });
             }
           }
         );
@@ -144,15 +182,8 @@ const Login = () => {
             underlineColorAndroid="transparent"
             autoCapitalize="none"
           />
+
           {/* input */}
-          {/* <Text
-            style={[
-              tw`text-base font-bold py-1`,
-              { backgroundColor: "transparent", color: "#F1FCFE" },
-            ]}
-          >
-            Password
-          </Text> */}
           <TextInput
             style={[
               tw`h-12 rounded-xl px-4 pr-2 mt-2 text-base overflow-hidden `,
@@ -164,6 +195,7 @@ const Login = () => {
             placeholder="Enter Password.."
             underlineColorAndroid="transparent"
             autoCapitalize="none"
+            secureTextEntry={true}
           />
 
           {/* button */}

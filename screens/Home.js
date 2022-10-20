@@ -23,9 +23,10 @@ import tw from "twrnc";
 
 import db from "../sqliteConfig";
 
-const Home = () => {
+const Home = ({ route }) => {
   const [todos, setTodos] = useState([]);
-  const [username, setUsername] = useState("-");
+  const [username, setUsername] = useState(route.params.username);
+  const [uid, setUid] = useState(0);
   const [addData, setAddData] = useState("");
   const [loading, isLoading] = useState(false);
 
@@ -122,12 +123,16 @@ const Home = () => {
   const getData = async () => {
     try {
       await db.transaction(async (tx) => {
-        await tx.executeSql("SELECT Username FROM Users", [], (tx, results) => {
-          var len = results.rows.length;
-          if (len > 0) {
-            setUsername(results.rows.item(0).Username);
+        await tx.executeSql(
+          "SELECT uid FROM Users WHERE Username=? AND Password=?",
+          [route.params.username, route.params.password],
+          (tx, results) => {
+            var len = results.rows.length;
+            if (len > 0) {
+              setUid(results.rows.item(0).uid);
+            }
           }
-        });
+        );
 
         await tx.executeSql(
           "SELECT * FROM Todos ORDER BY tid DESC",
@@ -217,14 +222,12 @@ const Home = () => {
         </View>
 
         {/* formContainer */}
-        <View
-          style={[tw`flex-row h-12 mx-4 mt-14 rounded-xl`, { elevation: 10 }]}
-        >
+        <View style={[tw`flex-row h-12 mx-4 mt-14 `, { elevation: 0 }]}>
           {/* input */}
           <TextInput
             style={[
               tw`h-12 rounded-l-xl px-4 pr-2 text-base overflow-hidden flex-1`,
-              { backgroundColor: "#1D3557", color: "#F1FCFE", elevation: 5 },
+              { backgroundColor: "#1D3557", color: "#F1FCFE", elevation: 10 },
             ]}
             placeholder="Enter a new to-do.."
             placeholderTextColor="#888899"
