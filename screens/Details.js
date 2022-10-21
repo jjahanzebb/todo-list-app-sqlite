@@ -6,7 +6,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import tw from "twrnc";
@@ -14,8 +14,53 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { Entypo, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import db from "../sqliteConfig";
+import _BackgroundTimer from "react-native-background-timer";
 
 const Details = ({ route }) => {
+  // background timer testing start >
+  const [secondsLeft, setSecondsLeft] = useState(3600);
+  const [timerOn, setTimerOn] = useState(false);
+
+  useEffect(() => {
+    if (timerOn) startTimer();
+    else _BackgroundTimer.stopBackgroundTimer();
+
+    return () => {
+      _BackgroundTimer.stopBackgroundTimer();
+    };
+  }, [timerOn]);
+
+  useEffect(() => {
+    if (secondsLeft === 0) _BackgroundTimer.stopBackgroundTimer();
+  }, [secondsLeft]);
+
+  const startTimer = () => {
+    _BackgroundTimer.runBackgroundTimer(() => {
+      setSecondsLeft((secs) => {
+        if (secs > 0) return secs - 1;
+        else return 0;
+      });
+    }, 1000);
+  };
+
+  const clockify = () => {
+    var hours = Math.floor(secondsLeft / 60 / 60);
+    var mins = Math.floor((secondsLeft / 60) % 60);
+    var seconds = Math.floor(secondsLeft % 60);
+
+    var displayHours = hours < 10 ? "0" + hours : hours;
+    var displayMinutes = mins < 10 ? "0" + mins : mins;
+    var displaySeconds = seconds < 10 ? "0" + seconds : seconds;
+
+    return {
+      displayHours,
+      displayMinutes,
+      displaySeconds,
+    };
+  };
+
+  // background timer testing end <
+
   const [textHeading, onChangeHeadingText] = useState(
     route.params.item.heading
   );
@@ -147,6 +192,33 @@ const Details = ({ route }) => {
             {/* buttonText */}
             <Text style={[tw`text-base ml-4`, { color: "#F1FCFE" }]}>
               Update To-do
+            </Text>
+          </TouchableOpacity>
+
+          {/* button */}
+          <Text>
+            {clockify().displayHours}:{clockify().displayMinutes}:
+            {clockify().displaySeconds}
+          </Text>
+          <TouchableOpacity
+            style={[
+              tw`h-12 rounded-xl px-4.5 mt-4 items-center justify-center flex-row`,
+              { backgroundColor: "#6ab934", elevation: 10 },
+            ]}
+            onPress={() => {
+              setTimerOn((current) => !current);
+            }}
+            activeOpacity={0.5}
+          >
+            <MaterialCommunityIcons
+              style={[tw`text-xl`, { elevation: 5 }]}
+              name="update"
+              color="#F1FCFE"
+            />
+
+            {/* buttonText */}
+            <Text style={[tw`text-base ml-4`, { color: "#F1FCFE" }]}>
+              Start/Stop timer
             </Text>
           </TouchableOpacity>
         </View>
