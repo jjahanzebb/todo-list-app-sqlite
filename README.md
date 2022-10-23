@@ -21,5 +21,3 @@
 
 ### ⚫ Details Screen
 <img src="https://user-images.githubusercontent.com/93594492/196633112-d4f00b38-d685-4362-8e8b-0af417ea0633.png" width="40%"/>
-
-
